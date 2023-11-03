@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from tensorflow.keras.utils import img_to_array, load_img
-from unzip_and_download import download_and_unzip
 
 FILE_URLS = [
     "https://storage.googleapis.com/tensorflow-1-public/course2/week3/horse-or-human.zip",
