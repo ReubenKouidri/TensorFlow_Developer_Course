@@ -48,8 +48,8 @@ def generate_model() -> tf.keras.Model.Sequential:
 
 
 def get_generators() -> tuple[ImageDataGenerator, ImageDataGenerator]:
-    train_datagen = ImageDataGenerator(rescale=1 / 255)
-    validation_datagen = ImageDataGenerator(rescale=1 / 255)
+    train_datagen = ImageDataGenerator(rescale=1/255)
+    validation_datagen = ImageDataGenerator(rescale=1/255)
 
     train_generator = train_datagen.flow_from_directory(
         train_dir,
