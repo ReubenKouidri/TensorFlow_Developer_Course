@@ -1,6 +1,7 @@
 import shutil
 from utils.unzip_and_download import download_and_unzip
 import os
+import pickle
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import random as random
@@ -67,7 +68,7 @@ def generate_model():
 
 def get_generators(train_dir, validation_dir):
     train_datagen = ImageDataGenerator(
-        rescale=1./255,
+        rescale=1. / 255,
         rotation_range=40,
         width_shift_range=0.2,
         height_shift_range=0.2,
@@ -158,6 +159,11 @@ def make_directory_structure():
     split_data(dog_source_dir, dog_train_dir, dog_validation_dir, 0.9)
 
 
+def download_history():
+    with open('history_augmented.pkl', 'wb') as f:
+        pickle.dump(history.history, f)
+
+
 if __name__ == '__main__':
     if DOWNLOAD:
         if DOWNLOAD_FULL:
@@ -172,5 +178,6 @@ if __name__ == '__main__':
 
     train_gen, validation_gen = get_generators('./cats_vs_dogs/train', './cats_vs_dogs/validation')
     model = generate_model()
-    history = train(model, train_gen, validation_gen)
+    history = train(model, train_gen, validation_gen, 1)
     plot_history(history)
+    download_history()
