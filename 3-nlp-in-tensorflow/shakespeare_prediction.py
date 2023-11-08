@@ -72,7 +72,7 @@ def fit_tokenizer(corpus: list, tokenizer: Tokenizer) -> Tokenizer:
     return tokenizer
 
 
-def features_and_labels(input_sequences: np.ndarray, total_words: int) -> tuple[list, np.ndarray]:
+def features_and_labels(input_sequences: np.ndarray, total_words: int) -> tuple[np.ndarray, np.ndarray]:
     """Generates features and labels from n-grams
 
     Args:
