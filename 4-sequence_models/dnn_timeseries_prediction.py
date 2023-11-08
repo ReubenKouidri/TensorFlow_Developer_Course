@@ -86,13 +86,19 @@ def windowed_dataset(series,
 
 def create_model(window_size=Globals.WINDOW_SIZE):
     model = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(10, input_shape=[window_size], activation="relu"),
-        tf.keras.layers.Dense(10, activation="relu"),
-        tf.keras.layers.Dense(1)
+        tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis=-1),
+                               input_shape=[None]),
+        tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(32, return_sequences=True)),
+        tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(32)),
+        tf.keras.layers.Dense(1),
+        tf.keras.layers.Lambda(lambda x: x * 100.0)
     ])
-    optimizer = tf.keras.optimizers.legacy.SGD(learning_rate=4e-5, momentum=0.9)
-    model.compile(loss='mse',
-                  optimizer=optimizer)
+    learning_rate = 8e-6
+    optimizer = tf.keras.optimizers.legacy.SGD(learning_rate=learning_rate, momentum=0.9)
+    # Huber-loss is more stable to outliers than e.g. mse
+    model.compile(loss=tf.keras.losses.Huber(),
+                  optimizer=optimizer,
+                  metrics=["mae"])
     return model
 
 
@@ -138,9 +144,9 @@ def generate_forecast(model, series=Globals.SERIES, split_time=Globals.SPLIT_TIM
 if __name__ == "__main__":
     time_train, series_train, time_valid, series_valid = train_val_split(Globals.TIME, Globals.SERIES)
     dataset = windowed_dataset(series_train)
-
+    val_set = windowed_dataset(series_valid, Globals.WINDOW_SIZE, Globals.BATCH_SIZE, Globals.SHUFFLE_BUFFER_SIZE)
     model = create_model()
-    history = model.fit(dataset, epochs=Globals.EPOCHS)
+    history = model.fit(dataset, epochs=Globals.EPOCHS, validation_data=val_set)
     # loss = history.history['loss']
     # plt.plot(np.arange(Globals.EPOCHS), loss, 'b', label='Training Loss')
     # plt.show()
