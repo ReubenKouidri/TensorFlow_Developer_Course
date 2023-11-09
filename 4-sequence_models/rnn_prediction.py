@@ -107,6 +107,20 @@ def create_model():
     return model
 
 
+def create_conv_model(window_size=Globals.WINDOW_SIZE):
+    model = tf.keras.models.Sequential([
+        tf.keras.layers.Conv1D(filters=64, kernel_size=3,
+                               strides=1, padding="causal",
+                               activation="relu",
+                               input_shape=[window_size, 1]),
+        tf.keras.layers.LSTM(32, return_sequences=True),
+        tf.keras.layers.LSTM(32),
+        tf.keras.layers.Dense(1),
+        tf.keras.layers.Lambda(lambda x: x * 100.0)
+    ])
+    return model
+
+
 def find_optimal_loss_long(lr_min=1e-6, lr_max=1e-3):
     """ This function gives a better estimate of the optimal loss but takes much longer to run """
     dataset = windowed_dataset(Globals.SERIES)
@@ -127,14 +141,14 @@ def find_optimal_loss_long(lr_min=1e-6, lr_max=1e-3):
 def plot_lr_against_loss(dataset):
     """ This version gives a decent estimate of the optimal loss within 50 epochs and is much faster than the above """
     model = create_uncompiled_model()
-    lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-6 * 10 ** (epoch / 20))
+    lr_schedule = tf.keras.callbacks.LearningRateScheduler(lambda epoch: 1e-8 * 10 ** (epoch / 20))
     optimizer = tf.keras.optimizers.Adam()
     model.compile(loss=tf.keras.losses.Huber(),
                   optimizer=optimizer,
                   metrics=["mae"])
     history = model.fit(dataset, epochs=100, callbacks=[lr_schedule])
     plt.semilogx(history.history["lr"], history.history["loss"])
-    plt.axis((1e-6, 1, 0, 30))
+    plt.axis((1e-8, 1, 0, 50))
     plt.show()
 
 
@@ -150,8 +164,13 @@ def model_forecast(model, series, window_size):
 if __name__ == '__main__':
     time_train, series_train, time_valid, series_valid = train_val_split(Globals.TIME, Globals.SERIES)
     dataset = windowed_dataset(series_train)
-    model = create_model()
+    # model = create_model()
+    # model.fit(dataset, epochs=Globals.EPOCHS)
+    model = create_conv_model(Globals.WINDOW_SIZE)
+    plot_lr_against_loss(dataset)
+    model.compile(loss=tf.keras.losses.Huber(), optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4), metrics=["mae"])
     model.fit(dataset, epochs=Globals.EPOCHS)
+
     rnn_forecast = model_forecast(model, Globals.SERIES, Globals.WINDOW_SIZE).squeeze()
     # Slice the forecast to get only the predictions for the validation set
     rnn_forecast = rnn_forecast[Globals.SPLIT_TIME - Globals.WINDOW_SIZE: -1]
